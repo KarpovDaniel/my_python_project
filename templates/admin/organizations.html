@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Управление организациями{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Управление организациями</h1>
+
+    <!-- Форма создания организации -->
+    <section class="organization-section" aria-labelledby="createOrganization">
+        <h2 id="createOrganization" class="section-title">Создать организацию</h2>
+        <form action="{{ url_for('create_organization') }}" method="post" class="organization-form">
+            <div class="form-group">
+                <label for="orgName">Название организации:</label>
+                <input type="text" id="orgName" name="name" required aria-describedby="orgNameHelp">
+                <small id="orgNameHelp" class="form-text text-muted">Введите название новой организации.</small>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Создать
+            </button>
+        </form>
+    </section>
+
+    <!-- Список организаций и назначение организаторов -->
+    <section class="organization-section" aria-labelledby="manageOrganizers">
+        <h2 id="manageOrganizers" class="section-title">Список организаций</h2>
+        {% if organizations %}
+        <table class="app-table" aria-describedby="organizationTable">
+            <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Название</th>
+                    <th scope="col">Организаторы</th>
+                    <th scope="col">Назначить организатора</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for org in organizations %}
+                <tr>
+                    <td>{{ org.id }}</td>
+                    <td>{{ org.name }}</td>
+                    <td>
+                        {% if org.members %}
+                            {% for member in org.members %}
+                                <span class="badge bg-primary">{{ member.username }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <span class="badge bg-secondary">Нет организаторов</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form action="{{ url_for('assign_organizer', org_id=org.id) }}" method="post" class="organizer-form">
+                            <div class="form-group">
+                                <label for="organizer-{{ org.id }}" class="visually-hidden">Выберите организатора для {{ org.name }}</label>
+                                <select id="organizer-{{ org.id }}" name="organizer_id" aria-describedby="organizerHelp-{{ org.id }}" required>
+                                    <option value="" disabled selected>Выберите организатора</option>
+                                    {% for user in organizers %}
+                                        <option value="{{ user.id }}">{{ user.username }}</option>
+                                    {% endfor %}
+                                </select>
+                                <small id="organizerHelp-{{ org.id }}" class="form-text text-muted">Выберите пользователя с ролью организатора.</small>
+                            </div>
+                            <button type="submit" class="btn btn-sm btn-primary mt-2">
+                                <i class="fas fa-user-plus"></i> Назначить
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="no-data">Нет созданных организаций.</p>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

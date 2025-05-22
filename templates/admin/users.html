@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Управление пользователями{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Управление пользователями</h1>
+    <table class="app-table" aria-describedby="userManagementTable">
+        <thead>
+            <tr>
+                <th scope="col">ID</th>
+                <th scope="col">Имя пользователя</th>
+                <th scope="col">Email</th>
+                <th scope="col">Текущая роль</th>
+                <th scope="col">Изменить роль</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td>
+                    {% if user.roles %}
+                        <span class="badge bg-primary">{{ user.roles[0].name }}</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Роль не назначена</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <form action="{{ url_for('update_roles', user_id=user.id) }}" method="post" class="role-form">
+                        <fieldset class="form-radio-group" aria-labelledby="rolesLabel-{{ user.id }}">
+                            <legend id="rolesLabel-{{ user.id }}" class="visually-hidden">Роль для {{ user.username }}</legend>
+                            {% for role in roles %}
+                            <div class="form-check">
+                                <input class="form-radio-input" type="radio"
+                                       name="role" value="{{ role.name }}"
+                                       id="role-{{ user.id }}-{{ role.name }}"
+                                       {% if user.roles and role.name == user.roles[0].name %}checked{% endif %}
+                                       aria-describedby="roleHelp-{{ user.id }}-{{ role.name }}"
+                                       required>
+                                <label class="form-radio-label" for="role-{{ user.id }}-{{ role.name }}">
+                                    {{ role.name }}
+                                </label>
+                                <small id="roleHelp-{{ user.id }}-{{ role.name }}" class="form-text text-muted">
+                                    {{ role.description or 'Роль ' + role.name }}
+                                </small>
+                            </div>
+                            {% endfor %}
+                        </fieldset>
+                        <button type="submit" class="btn btn-sm btn-primary mt-2">
+                            <i class="fas fa-save"></i> Сохранить
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

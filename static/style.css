@@ -1,0 +1,306 @@
+/* Общие стили для приложения */
+:root {
+    --primary-color: #0d6efd;
+    --primary-hover: #0a58ca;
+    --background-color: #ffffff;
+    --text-color: #212529;
+    --border-color: #dee2e6;
+    --alert-success: #d4edda;
+    --alert-error: #f8d7da;
+    --alert-text-success: #155724;
+    --alert-text-error: #721c24;
+    --secondary-color: #6c757d;
+    --input-bg: #ffffff;
+    --input-border: #ced4da;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background-color: #212529;
+        --text-color: #f8f9fa;
+        --border-color: #495057;
+        --input-bg: #343a40;
+        --input-border: #6c757d;
+    }
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/* Навигация */
+.navbar {
+    background-color: var(--primary-color);
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar .container {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.nav-link {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.nav-link i {
+    font-size: 1rem;
+}
+
+.nav-link:hover {
+    background-color: var(--primary-hover);
+}
+
+.nav-link[aria-current="page"] {
+    background-color: var(--primary-hover);
+    font-weight: 700;
+}
+
+/* Flash-сообщения */
+.alert {
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    border-radius: 0.25rem;
+    position: relative;
+}
+
+.alert-success {
+    background-color: var(--alert-success);
+    color: var(--alert-text-success);
+}
+
+.alert-error {
+    background-color: var(--alert-error);
+    color: var(--alert-text-error);
+}
+
+/* Заголовки */
+.page-title {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    color: var(--text-color);
+}
+
+.section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+/* Таблица */
+.app-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.5rem;
+    background-color: var(--background-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.app-table th,
+.app-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.app-table th {
+    background-color: var(--primary-color);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.app-table tr:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* Бейджи */
+.badge {
+    display: inline-block;
+    padding: 0.35em 0.65em;
+    font-size: 0.85em;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    border-radius: 0.25rem;
+    margin-right: 0.5rem;
+}
+
+.bg-primary {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.bg-secondary {
+    background-color: var(--secondary-color);
+    color: #ffffff;
+}
+
+/* Кнопки */
+.btn {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn i {
+    font-size: 1rem;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: #ffffff;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* Формы */
+.user-form, .role-form, .organization-form, .organizer-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-width: 500px;
+}
+
+.form-radio-group, .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.form-check {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.form-radio-input {
+    margin: 0;
+    cursor: pointer;
+    width: 1.2rem;
+    height: 1.2rem;
+}
+
+.form-radio-label {
+    font-size: 0.95rem;
+    cursor: pointer;
+}
+
+.form-group input,
+.form-group select {
+    padding: 0.5rem;
+    border: 1px solid var(--input-border);
+    border-radius: 0.25rem;
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+.form-group select {
+    width: 100%;
+    max-width: 200px;
+}
+
+.form-text {
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+/* Сообщение об отсутствии данных */
+.no-data {
+    font-size: 1rem;
+    color: #6c757d;
+    text-align: center;
+    margin: 2rem 0;
+}
+
+/* Скрытый текст для доступности */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+/* Секции */
+.organization-section {
+    margin-bottom: 2rem;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .navbar .container {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .app-table th,
+    .app-table td {
+        padding: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .page-title {
+        font-size: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.2rem;
+    }
+
+    .form-radio-input {
+        width: 1rem;
+        height: 1rem;
+    }
+
+    .form-group select {
+        max-width: 100%;
+    }
+
+    .user-form {
+        max-width: 100%;
+    }
+}

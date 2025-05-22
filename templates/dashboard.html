@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Личный кабинет{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Личный кабинет</h1>
+    <p>Добро пожаловать, {{ current_user.username }}!</p>
+    <p>Ваша роль: {% if current_user.roles %}{{ current_user.roles[0].name }}{% else %}Не назначена{% endif %}</p>
+    {% if current_user.organizations %}
+        <p>Ваша организация: {{ current_user.organizations[0].name }}</p>
+    {% else %}
+        <p>Вы не состоите в организации.</p>
+    {% endif %}
+</div>
+{% endblock %}

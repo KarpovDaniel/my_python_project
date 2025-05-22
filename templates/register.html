@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Регистрация{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Регистрация</h1>
+    <form action="{{ url_for('register') }}" method="post" class="user-form">
+        <div class="form-group">
+            <label for="username">Имя пользователя:</label>
+            <input type="text" id="username" name="username" required aria-describedby="usernameHelp">
+            <small id="usernameHelp" class="form-text text-muted">Введите имя пользователя.</small>
+        </div>
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" name="email" required aria-describedby="emailHelp">
+            <small id="emailHelp" class="form-text text-muted">Введите ваш email.</small>
+        </div>
+        <div class="form-group">
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" required aria-describedby="passwordHelp">
+            <small id="passwordHelp" class="form-text text-muted">Введите пароль.</small>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> Зарегистрироваться
+        </button>
+    </form>
+</div>
+{% endblock %}

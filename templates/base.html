@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Flask Приложение{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="{{ url_for('index') }}" class="nav-link" {% if request.endpoint == 'index' %}aria-current="page"{% endif %}>
+                <i class="fas fa-home"></i> Главная
+            </a>
+            {% if current_user.is_authenticated %}
+                {% if current_user.has_role('admin') %}
+                    <a href="{{ url_for('admin_panel') }}" class="nav-link" {% if request.endpoint == 'admin_panel' %}aria-current="page"{% endif %}>
+                        <i class="fas fa-user-shield"></i> Админ
+                    </a>
+                {% endif %}
+                {% if current_user.has_role('organizer') %}
+                    <a href="{{ url_for('organizer_panel') }}" class="nav-link" {% if request.endpoint == 'organizer_panel' %}aria-current="page"{% endif %}>
+                        <i class="fas fa-calendar-alt"></i> Организатор
+                    </a>
+                {% endif %}
+                <a href="{{ url_for('dashboard') }}" class="nav-link" {% if request.endpoint == 'dashboard' %}aria-current="page"{% endif %}>
+                    <i class="fas fa-tachometer-alt"></i> Личный кабинет
+                </a>
+                <a href="{{ url_for('logout') }}" class="nav-link">
+                    <i class="fas fa-sign-out-alt"></i> Выйти
+                </a>
+            {% else %}
+                <a href="{{ url_for('login') }}" class="nav-link" {% if request.endpoint == 'login' %}aria-current="page"{% endif %}>
+                    <i class="fas fa-sign-in-alt"></i> Войти
+                </a>
+                <a href="{{ url_for('register') }}" class="nav-link" {% if request.endpoint == 'register' %}aria-current="page"{% endif %}>
+                    <i class="fas fa-user-plus"></i> Зарегистрироваться
+                </a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}" role="alert">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>
