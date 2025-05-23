@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Состав организации{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="page-title">Состав организации: {{ organization.name }}</h1>
+    {% if members %}
+        <table class="app-table" aria-describedby="membersTable">
+            <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Имя пользователя</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Роль</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for member in members %}
+                <tr>
+                    <td>{{ member.id }}</td>
+                    <td>{{ member.username }}</td>
+                    <td>{{ member.email }}</td>
+                    <td>
+                        {% if member.roles %}
+                            <span class="badge bg-primary">{{ member.roles[0].name }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Роль не назначена</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="no-data">В организации нет членов.</p>
+    {% endif %}
+    <a href="{{ url_for('organizer_panel') }}" class="btn btn-primary">
+        <i class="fas fa-arrow-left"></i> Назад
+    </a>
+</div>
+{% endblock %}

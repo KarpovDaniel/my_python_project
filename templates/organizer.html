@@ -14,5 +14,87 @@
     <a href="{{ url_for('create_user') }}" class="btn btn-primary">
         <i class="fas fa-user-plus"></i> Создать пользователя
     </a>
+    <form action="{{ url_for('request_certificate') }}" method="post" class="certificate-form">
+        <h2 class="section-title">Запрос сертификата</h2>
+        <div class="form-group">
+            <label for="certificate_type">Тип сертификата:</label>
+            <select name="certificate_type" id="certificate_type" required aria-describedby="certificateTypeHelp">
+                <option value="client">Клиентский сертификат</option>
+                <option value="server">Серверный сертификат</option>
+            </select>
+            <small id="certificateTypeHelp" class="form-text text-muted">Выберите тип сертификата.</small>
+        </div>
+        <div class="form-group" id="permissions-group">
+            <label for="permissions">Выберите разрешения (для клиентского сертификата):</label>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="permissions" value="admin" id="perm-admin">
+                <label class="form-check-label" for="perm-admin">Admin</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="permissions" value="repo" id="perm-repo">
+                <label class="form-check-label" for="perm-repo">Repo</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="permissions" value="build" id="perm-build">
+                <label class="form-check-label" for="perm-build">Build</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="permissions" value="tag" id="perm-tag">
+                <label class="form-check-label" for="perm-tag">Tag</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="permissions" value="host" id="perm-host">
+                <label class="form-check-label" for="perm-host">Host</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="permissions" value="win-build" id="perm-win-build">
+                <label class="form-check-label" for="perm-win-build">Win-Build</label>
+            </div>
+            <div class="form-check">
+                <input type="checkbox" class="form-check-input" name="permissions" value="vm" id="perm-vm">
+                <label class="form-check-label" for="perm-vm">VM</label>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-certificate"></i> Запросить сертификат
+        </button>
+    </form>
+    <a href="{{ url_for('organization_members') }}" class="btn btn-primary" style="margin-top: 1rem;">
+        <i class="fas fa-users"></i> Посмотреть состав организации
+    </a>
+
+    <h2 class="section-title">Ваши запросы на сертификаты</h2>
+    {% set certificate_requests = current_user.certificate_requests.all() %}
+    {% if certificate_requests %}
+        <div class="certificate-list">
+            {% for req in certificate_requests %}
+                <div class="certificate-item">
+                    <p><strong>Тип:</strong> {{ req.certificate_type }}</p>
+                    <p><strong>Дата запроса:</strong> {{ req.request_date.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                    <p><strong>Статус:</strong> {{ req.status }}</p>
+                    {% if req.status == 'approved' %}
+                        <p><strong>Сертификат:</strong> {{ req.user.username }}.crt</p>
+                        <p><strong>Ключ:</strong> {{ req.user.username }}.key</p>
+                        {% if req.certificate_type == 'client' %}
+                            <p><strong>Разрешения:</strong> {{ koji_gen.get_permissions(req.user.username) | join(', ') }}</p>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="no-data">У вас нет запросов на сертификаты.</p>
+    {% endif %}
 </div>
+
+<script>
+document.getElementById('certificate_type').addEventListener('change', function() {
+    const permissionsGroup = document.getElementById('permissions-group');
+    if (this.value === 'server') {
+        permissionsGroup.style.display = 'none';
+    } else {
+        permissionsGroup.style.display = 'block';
+    }
+});
+</script>
 {% endblock %}

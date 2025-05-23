@@ -1,53 +1,58 @@
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
+from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-roles_users = db.Table('roles_users',
-    db.Column('user_id', db.Integer(), db.ForeignKey('user.id')),
-    db.Column('role_id', db.Integer(), db.ForeignKey('role.id'))
+# Таблица связи многие-ко-многим между пользователями и организациями
+organization_users = db.Table(
+    'organization_users',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('organization_id', db.Integer, db.ForeignKey('organization.id'), primary_key=True)
 )
 
-organization_users = db.Table('organization_users',
-    db.Column('organization_id', db.Integer, db.ForeignKey('organization.id')),
-    db.Column('user_id', db.Integer, db.ForeignKey('user.id'))
+# Таблица связи многие-ко-многим между пользователями и ролями
+user_roles = db.Table(
+    'user_roles',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('role_id', db.Integer, db.ForeignKey('role.id'), primary_key=True)
 )
 
-class Role(db.Model):
-    id = db.Column(db.Integer(), primary_key=True)
-    name = db.Column(db.String(50), unique=True)
-    description = db.Column(db.String(200))
 
-    def __repr__(self):
-        return f'<Роль {self.name}>'
-
-class User(db.Model, UserMixin):
+class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
-    email = db.Column(db.String(100), unique=True, nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
-    active = db.Column(db.Boolean(), default=True)
-    roles = db.relationship('Role', secondary=roles_users,
-                            backref=db.backref('users', lazy='dynamic'))
+    roles = db.relationship('Role', secondary=user_roles, backref=db.backref('users', lazy='dynamic'))
     organizations = db.relationship('Organization', secondary=organization_users,
-                                   backref=db.backref('members', lazy='dynamic'))
+                                    backref=db.backref('members', lazy='dynamic'))
+    certificate_requests = db.relationship('CertificateRequest', backref='user', lazy='dynamic')
+
+    def set_password(self, password):
+        from werkzeug.security import generate_password_hash
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        from werkzeug.security import check_password_hash
+        return check_password_hash(self.password_hash, password)
 
     def has_role(self, role_name):
         return any(role.name == role_name for role in self.roles)
 
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
 
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+class Role(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True, nullable=False)
 
-    def __repr__(self):
-        return f'<Пользователь {self.username}>'
 
 class Organization(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), unique=True, nullable=False)
+    name = db.Column(db.String(120), unique=True, nullable=False)
 
-    def __repr__(self):
-        return f'<Организация {self.name}>'
+
+class CertificateRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    request_date = db.Column(db.DateTime, nullable=False)
+    status = db.Column(db.String(20), nullable=False, default='pending')  # pending, approved, rejected
+    certificate_type = db.Column(db.String(20), nullable=False)  # client, server

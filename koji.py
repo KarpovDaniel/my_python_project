@@ -2,42 +2,33 @@ import subprocess
 import os
 import json
 
-
 def run_openssl_command(command):
-    """Запускает команду openssl и возвращает вывод."""
     try:
-        subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        result = subprocess.run(command, shell=True, check=True, capture_output=True, text=True)
+        return result.stdout
     except subprocess.CalledProcessError as e:
         raise RuntimeError(f"Ошибка при выполнении команды openssl: {e.stderr}")
 
-
 class KojiCertGenerator:
     def __init__(self, base_dir):
-        """Инициализация генератора сертификатов с базовой директорией."""
         self.base_dir = base_dir
         self.ca_key_path = os.path.join(base_dir, 'koji_ca_cert.key')
         self.ca_cert_path = os.path.join(base_dir, 'koji_ca_cert.crt')
         self.certs_dir = os.path.join(base_dir, 'certs')
         self.csr_dir = os.path.join(base_dir, 'csr')
         self.permissions_file = os.path.join(base_dir, 'permissions.json')
-        self.permissions = {}  # Хранит соответствие CN и разрешений
         os.makedirs(self.certs_dir, exist_ok=True)
         os.makedirs(self.csr_dir, exist_ok=True)
-        # Загрузка существующих разрешений, если файл существует
         if os.path.exists(self.permissions_file):
             with open(self.permissions_file, 'r') as f:
                 self.permissions = json.load(f)
 
     def generate_ca_cert(self, subject="/CN=Koji CA", days=3650):
-        """Генерирует CA ключ и самоподписанный сертификат."""
-        # Генерация приватного ключа CA
         run_openssl_command(f"openssl genrsa -out {self.ca_key_path} 2048")
-        # Генерация самоподписанного сертификата CA
         run_openssl_command(
             f"openssl req -new -x509 -days {days} -key {self.ca_key_path} -out {self.ca_cert_path} -subj '{subject}'")
 
     def generate_cert(self, cn, auth, days):
-        """Генерирует серверный ключ, CSR и сертификат, подписанный CA."""
         key_path = os.path.join(self.certs_dir, f"{cn}.key")
         csr_path = os.path.join(self.csr_dir, f"{cn}.csr")
         cert_path = os.path.join(self.certs_dir, f"{cn}.crt")
@@ -57,18 +48,15 @@ class KojiCertGenerator:
         os.remove(ext_file)
 
     def generate_server_cert(self, cn, days=365):
-        """Генерирует серверный ключ, CSR и сертификат, подписанный CA."""
         self.generate_cert(cn, "server", days)
 
-    def generate_client_cert(self, cn, permissions: list[str] = None, days=365):
-        """Генерирует клиентский ключ, CSR и сертификат, подписанный CA."""
+    def generate_client_cert(self, cn, permissions=None, days=365):
         self.generate_cert(cn, "client", days)
         # Сохранение разрешений, если они указаны
         if permissions:
             self.assign_permissions(cn, permissions)
 
     def assign_permissions(self, cn, permissions):
-        """Присваивает разрешения для указанного CN и сохраняет их в файл."""
         valid_permissions = {'admin', 'repo', 'build', 'tag', 'host', 'win-build', 'vm'}
         if not all(p in valid_permissions for p in permissions):
             raise ValueError(f"Недопустимые разрешения. Допустимые: {valid_permissions}")
@@ -77,5 +65,4 @@ class KojiCertGenerator:
             json.dump(self.permissions, f, indent=4)
 
     def get_permissions(self, cn):
-        """Возвращает разрешения для указанного CN."""
         return self.permissions.get(cn, [])

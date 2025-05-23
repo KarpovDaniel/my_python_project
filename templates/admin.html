@@ -6,16 +6,14 @@
 <div class="container">
     <h1 class="page-title">Панель администратора</h1>
     <p>Добро пожаловать, {{ current_user.username }}!</p>
-    <div class="admin-links">
-        <a href="{{ url_for('user_management') }}" class="btn btn-primary">
-            <i class="fas fa-users"></i> Управление пользователями
-        </a>
-        <a href="{{ url_for('organization_management') }}" class="btn btn-primary">
-            <i class="fas fa-building"></i> Управление организациями
-        </a>
-        <a href="{{ url_for('create_user') }}" class="btn btn-primary">
-            <i class="fas fa-user-plus"></i> Создать пользователя
-        </a>
-    </div>
+    <a href="{{ url_for('user_management') }}" class="btn btn-primary">
+        <i class="fas fa-users"></i> Управление пользователями
+    </a>
+    <a href="{{ url_for('organization_management') }}" class="btn btn-primary">
+        <i class="fas fa-sitemap"></i> Управление организациями
+    </a>
+    <a href="{{ url_for('certificate_requests') }}" class="btn btn-primary">
+        <i class="fas fa-certificate"></i> Управление запросами на сертификаты
+    </a>
 </div>
 {% endblock %}

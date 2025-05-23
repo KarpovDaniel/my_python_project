@@ -12,5 +12,45 @@
     {% else %}
         <p>Вы не состоите в организации.</p>
     {% endif %}
+    {% if current_user.has_role('user') %}
+        <form action="{{ url_for('request_certificate') }}" method="post" class="certificate-form">
+            <input type="hidden" name="certificate_type" value="client">
+            <h2 class="section-title">Запрос клиентского сертификата</h2>
+            <div class="form-group">
+                <label for="permissions">Выберите разрешения:</label>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="permissions" value="admin" id="perm-admin">
+                    <label class="form-check-label" for="perm-admin">Admin</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="permissions" value="repo" id="perm-repo">
+                    <label class="form-check-label" for="perm-repo">Repo</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="permissions" value="build" id="perm-build">
+                    <label class="form-check-label" for="perm-build">Build</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="permissions" value="tag" id="perm-tag">
+                    <label class="form-check-label" for="perm-tag">Tag</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="permissions" value="host" id="perm-host">
+                    <label class="form-check-label" for="perm-host">Host</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="permissions" value="win-build" id="perm-win-build">
+                    <label class="form-check-label" for="perm-win-build">Win-Build</label>
+                </div>
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="permissions" value="vm" id="perm-vm">
+                    <label class="form-check-label" for="perm-vm">VM</label>
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-certificate"></i> Запросить клиентский сертификат
+            </button>
+        </form>
+    {% endif %}
 </div>
 {% endblock %}
