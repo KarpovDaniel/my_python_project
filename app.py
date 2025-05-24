@@ -6,12 +6,12 @@ from flask_migrate import Migrate
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 import os
-from models import db, User, Role, Organization, CertificateRequest, organization_users
+from models import db, User, Organization, CertificateRequest
 from koji import KojiCertGenerator
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'ваш-секретный-ключ'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://zooob:1q2w3eRT@localhost/flask_auth'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://daniel:daniel@localhost/flask_auth'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # Настройка логирования
@@ -46,9 +46,7 @@ def role_required(role_name):
             if not current_user.is_authenticated or not current_user.has_role(role_name):
                 abort(403)
             return f(*args, **kwargs)
-
         return decorated_function
-
     return decorator
 
 
@@ -90,9 +88,7 @@ def register():
         try:
             new_user = User(username=username, email=email)
             new_user.set_password(password)
-            role = Role.query.filter_by(name='user').first()
-            if role:
-                new_user.roles.append(role)
+            new_user.role_name = 'user'  # Прямое назначение роли
             db.session.add(new_user)
             db.session.commit()
             flash('Регистрация успешна, пожалуйста, войдите', 'success')
@@ -114,7 +110,6 @@ def logout():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    # Получаем запросы пользователя
     certificate_requests = CertificateRequest.query.filter_by(user_id=current_user.id).all()
     return render_template('dashboard.html', certificate_requests=certificate_requests)
 
@@ -123,7 +118,29 @@ def dashboard():
 @login_required
 @role_required('organizer')
 def organizer_panel():
-    return render_template('organizer.html')
+    # Проверяем, привязан ли организатор к организации
+    if not current_user.organization:
+        flash('Вы не привязаны к организации.', 'error')
+        return redirect(url_for('organizer_panel'))  # или редирект на другую страницу
+
+    organization = current_user.organization  # Прямой доступ к организации
+
+    # Получаем всех членов организации
+    members = organization.members.all()  # Используем lazy='dynamic' из модели
+
+    # Собираем ID членов организации
+    member_ids = [member.id for member in members]
+
+    # Получаем запросы на сертификаты от членов организации
+    certificate_requests = CertificateRequest.query.filter(
+        CertificateRequest.user_id.in_(member_ids)
+    ).all()
+
+    return render_template(
+        'organizer.html',
+        certificate_requests=certificate_requests,
+        organization=organization
+    )
 
 
 @app.route('/admin')
@@ -140,14 +157,12 @@ def create_user():
         logger.warning(f"Пользователь {current_user.username} попытался получить доступ к /admin/create_user без прав")
         abort(403)
 
-    # Для организатора проверяем наличие организации заранее
     organizer_orgs = None
     if current_user.has_role('organizer'):
-        organizer_orgs = Organization.query.join(organization_users).filter(
-            organization_users.c.user_id == current_user.id).all()
+        organizer_orgs = Organization.query.join(User).filter(User.organization_id == Organization.id).filter(User.id == current_user.id).all()
         if not organizer_orgs:
             flash('Организатор не привязан к организации. Обратитесь к администратору.', 'error')
-            return redirect(url_for('organizer_panel'))
+            return redirect(url_for('organizer'))
 
     if request.method == 'POST':
         username = request.form.get('username')
@@ -156,12 +171,10 @@ def create_user():
         role_name = request.form.get('role', 'user')
         organization_id = request.form.get('organization_id')
 
-        # Проверка на наличие обязательных полей
         if not username or not email or not password:
             flash('Все поля (имя пользователя, email, пароль) обязательны.', 'error')
             return redirect(url_for('create_user'))
 
-        # Проверка уникальности
         if User.query.filter_by(username=username).first():
             flash('Имя пользователя уже занято', 'error')
             return redirect(url_for('create_user'))
@@ -172,41 +185,30 @@ def create_user():
         try:
             new_user = User(username=username, email=email)
             new_user.set_password(password)
+            new_user.role_name = role_name
 
-            # Назначение роли
-            role = Role.query.filter_by(name=role_name).first()
-            if not role:
-                flash('Выбранная роль не существует', 'error')
-                return redirect(url_for('create_user'))
-            new_user.roles.append(role)
-
-            # Назначение организации
             if current_user.has_role('admin'):
                 if organization_id:
                     org = db.session.get(Organization, organization_id)
                     if org:
-                        new_user.organizations.append(org)
+                        new_user.organization_id = org.id  # Прямое назначение организации
                     else:
                         flash('Выбранная организация не найдена', 'error')
                         return redirect(url_for('create_user'))
             elif current_user.has_role('organizer'):
-                new_user.organizations.append(organizer_orgs[0])
+                new_user.organization_id = organizer_orgs[0].id  # Прямое назначение организации
 
             db.session.add(new_user)
             db.session.commit()
             flash('Пользователь успешно создан', 'success')
-
-            if current_user.has_role('admin'):
-                return redirect(url_for('user_management'))
-            else:
-                return redirect(url_for('organizer_panel'))
+            return redirect(url_for('user_management') if current_user.has_role('admin') else redirect(url_for('organizer')))
         except Exception as e:
             db.session.rollback()
             logger.error(f"Ошибка при создании пользователя: {str(e)}")
             flash(f'Ошибка при создании пользователя: {str(e)}', 'error')
             return redirect(url_for('create_user'))
 
-    roles = Role.query.all()
+    roles = ['admin', 'organizer', 'user']
     organizations = Organization.query.all() if current_user.has_role('admin') else []
     return render_template('admin/create_user.html', roles=roles, organizations=organizations)
 
@@ -216,7 +218,7 @@ def create_user():
 @role_required('admin')
 def user_management():
     users = User.query.all()
-    roles = Role.query.all()
+    roles = ['admin', 'organizer', 'user']
     return render_template('admin/users.html', users=users, roles=roles)
 
 
@@ -228,14 +230,9 @@ def update_roles(user_id):
     if not user:
         flash('Пользователь не найден', 'error')
         return redirect(url_for('user_management'))
-
     selected_role = request.form.get('role')
     try:
-        user.roles = []
-        if selected_role:
-            role = Role.query.filter_by(name=selected_role).first()
-            if role:
-                user.roles.append(role)
+        user.role_name = selected_role  # Прямое обновление роли
         db.session.commit()
         flash('Роль пользователя успешно обновлена', 'success')
     except Exception as e:
@@ -249,7 +246,7 @@ def update_roles(user_id):
 @role_required('admin')
 def organization_management():
     organizations = Organization.query.all()
-    organizers = User.query.filter(User.roles.any(Role.name == 'organizer')).all()
+    organizers = User.query.filter(User.role_name == 'organizer').all()
     return render_template('admin/organizations.html', organizations=organizations, organizers=organizers)
 
 
@@ -289,8 +286,8 @@ def assign_organizer(org_id):
         flash('Пользователь не найден', 'error')
         return redirect(url_for('organization_management'))
     try:
-        if organizer not in org.members:
-            org.members.append(organizer)
+        if organizer.organization_id != org.id:
+            organizer.organization_id = org.id  # Прямое назначение организации
             db.session.commit()
             flash(f'Организатор {organizer.username} успешно назначен', 'success')
         else:
@@ -305,14 +302,11 @@ def assign_organizer(org_id):
 @login_required
 @role_required('organizer')
 def organization_members():
-    organizer_orgs = Organization.query.join(organization_users).filter(
-        organization_users.c.user_id == current_user.id).all()
-    if not organizer_orgs:
+    if not current_user.organization:
         flash('Вы не привязаны к организации.', 'error')
-        return redirect(url_for('organizer_panel'))
-
-    members = organizer_orgs[0].members
-    return render_template('organization_members.html', members=members, organization=organizer_orgs[0])
+        return redirect(url_for('organizer'))
+    members = current_user.organization.members
+    return render_template('organization_members.html', members=members, organization=current_user.organization)
 
 
 @app.route('/admin/certificate_requests')
@@ -324,55 +318,66 @@ def certificate_requests():
 
 
 @app.route('/admin/approve_request/<int:request_id>', methods=['POST'])
+@app.route('/organizer/approve_request/<int:request_id>', methods=['POST'])  # Добавлен маршрут для организатора
 @login_required
-@role_required('admin')
 def approve_request(request_id):
     cert_request = CertificateRequest.query.get_or_404(request_id)
+
+    # Проверяем права: админ или организатор из той же организации
+    if not (current_user.has_role('admin') or
+            (current_user.has_role('organizer') and current_user.organization_id == cert_request.user.organization_id)):
+        abort(403)
+
     if cert_request.status != 'pending':
         flash('Этот запрос уже обработан.', 'error')
-        return redirect(url_for('certificate_requests'))
+        return redirect(url_for('certificate_requests' if current_user.has_role('admin') else 'organizer_panel'))
 
     try:
-        # Генерация сертификата
         cn = cert_request.user.username
         if cert_request.certificate_type == 'client':
-            # Получаем разрешения для пользователя (если они есть)
-            permissions = koji_gen.get_permissions(cn)  # Предполагаем, что разрешения уже сохранены
+            permissions = koji_gen.get_permissions(cn)
             koji_gen.generate_client_cert(cn, permissions)
         elif cert_request.certificate_type == 'server':
             koji_gen.generate_server_cert(cn)
 
-        # Обновляем статус запроса
         cert_request.status = 'approved'
         db.session.commit()
         flash(f'Запрос на {cert_request.certificate_type} сертификат для {cn} одобрен.', 'success')
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Ошибка при одобрении запроса: {str(e)}")
         flash(f'Ошибка при генерации сертификата: {str(e)}', 'error')
 
-    return redirect(url_for('certificate_requests'))
+    return redirect(url_for('certificate_requests' if current_user.has_role('admin') else 'organizer_panel'))
 
 
 @app.route('/admin/reject_request/<int:request_id>', methods=['POST'])
+@app.route('/organizer/reject_request/<int:request_id>', methods=['POST'])  # Добавлен маршрут для организатора
 @login_required
-@role_required('admin')
 def reject_request(request_id):
     cert_request = CertificateRequest.query.get_or_404(request_id)
+
+    # Проверяем права: админ или организатор из той же организации
+    if not (current_user.has_role('admin') or
+            (current_user.has_role('organizer') and current_user.organization_id == cert_request.user.organization_id)):
+        abort(403)
+
     if cert_request.status != 'pending':
         flash('Этот запрос уже обработан.', 'error')
-        return redirect(url_for('certificate_requests'))
+        return redirect(url_for('certificate_requests' if current_user.has_role('admin') else 'organizer_panel'))
 
     try:
         cert_request.status = 'rejected'
         db.session.commit()
         flash(f'Запрос на {cert_request.certificate_type} сертификат отклонён.', 'success')
+
     except Exception as e:
         db.session.rollback()
         logger.error(f"Ошибка при отклонении запроса: {str(e)}")
         flash(f'Ошибка при отклонении запроса: {str(e)}', 'error')
 
-    return redirect(url_for('certificate_requests'))
+    return redirect(url_for('certificate_requests' if current_user.has_role('admin') else 'organizer_panel'))
 
 
 @app.route('/request_certificate', methods=['POST'])
@@ -381,29 +386,22 @@ def request_certificate():
     if not (current_user.has_role('user') or current_user.has_role('organizer')):
         logger.warning(f"Пользователь {current_user.username} попытался запросить сертификат без прав")
         abort(403)
-
     certificate_type = request.form.get('certificate_type', 'client')
-    permissions = request.form.getlist('permissions')  # Получаем список разрешений
-    cn = current_user.username  # Используем имя пользователя как CN
-
-    # Проверка ролей и типов сертификатов
+    permissions = request.form.getlist('permissions')
+    cn = current_user.username
     if current_user.has_role('user') and certificate_type != 'client':
         flash('Обычные пользователи могут запрашивать только клиентские сертификаты.', 'error')
         return redirect(url_for('dashboard'))
     elif current_user.has_role('organizer') and certificate_type not in ['client', 'server']:
         flash('Организаторы могут запрашивать только клиентские или серверные сертификаты.', 'error')
-        return redirect(url_for('organizer_panel'))
-
+        return redirect(url_for('organizer'))
     try:
-        # Проверка, нет ли уже активного запроса для этого типа сертификата
         existing_request = CertificateRequest.query.filter_by(
             user_id=current_user.id, certificate_type=certificate_type, status='pending'
         ).first()
         if existing_request:
             flash(f'У вас уже есть активный запрос на {certificate_type} сертификат.', 'error')
-            return redirect(url_for('dashboard' if current_user.has_role('user') else 'organizer_panel'))
-
-        # Создание нового запроса в базе данных
+            return redirect(url_for('dashboard' if current_user.has_role('user') else 'organizer'))
         cert_request = CertificateRequest(
             user_id=current_user.id,
             request_date=datetime.utcnow(),
@@ -412,18 +410,14 @@ def request_certificate():
         )
         db.session.add(cert_request)
         db.session.commit()
-
-        # Сохраняем разрешения для клиента (если есть)
         if certificate_type == 'client' and permissions:
             koji_gen.assign_permissions(cn, permissions)
-
         flash(f'Запрос на {certificate_type} сертификат отправлен на рассмотрение.', 'success')
     except Exception as e:
         db.session.rollback()
         logger.error(f"Ошибка при создании запроса на сертификат: {str(e)}")
         flash(f'Ошибка при отправке запроса: {str(e)}', 'error')
-
-    return redirect(url_for('dashboard' if current_user.has_role('user') else 'organizer_panel'))
+    return redirect(url_for('dashboard' if current_user.has_role('user') else 'organizer'))
 
 
 if __name__ == '__main__':

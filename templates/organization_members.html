@@ -9,7 +9,6 @@
         <table class="app-table" aria-describedby="membersTable">
             <thead>
                 <tr>
-                    <th scope="col">ID</th>
                     <th scope="col">Имя пользователя</th>
                     <th scope="col">Email</th>
                     <th scope="col">Роль</th>
@@ -18,12 +17,11 @@
             <tbody>
                 {% for member in members %}
                 <tr>
-                    <td>{{ member.id }}</td>
                     <td>{{ member.username }}</td>
                     <td>{{ member.email }}</td>
                     <td>
-                        {% if member.roles %}
-                            <span class="badge bg-primary">{{ member.roles[0].name }}</span>
+                        {% if member.role_name %}
+                            <span class="badge bg-primary">{{ member.role_name }}</span>
                         {% else %}
                             <span class="badge bg-secondary">Роль не назначена</span>
                         {% endif %}

@@ -17,6 +17,7 @@ class KojiCertGenerator:
         self.certs_dir = os.path.join(base_dir, 'certs')
         self.csr_dir = os.path.join(base_dir, 'csr')
         self.permissions_file = os.path.join(base_dir, 'permissions.json')
+        self.permissions = {}
         os.makedirs(self.certs_dir, exist_ok=True)
         os.makedirs(self.csr_dir, exist_ok=True)
         if os.path.exists(self.permissions_file):

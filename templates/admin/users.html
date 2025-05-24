@@ -22,8 +22,8 @@
                 <td>{{ user.username }}</td>
                 <td>{{ user.email }}</td>
                 <td>
-                    {% if user.roles %}
-                        <span class="badge bg-primary">{{ user.roles[0].name }}</span>
+                    {% if user.role_name %}
+                        <span class="badge bg-primary">{{ user.role_name }}</span>
                     {% else %}
                         <span class="badge bg-secondary">Роль не назначена</span>
                     {% endif %}
@@ -35,17 +35,14 @@
                             {% for role in roles %}
                             <div class="form-check">
                                 <input class="form-radio-input" type="radio"
-                                       name="role" value="{{ role.name }}"
-                                       id="role-{{ user.id }}-{{ role.name }}"
-                                       {% if user.roles and role.name == user.roles[0].name %}checked{% endif %}
-                                       aria-describedby="roleHelp-{{ user.id }}-{{ role.name }}"
+                                       name="role" value="{{ role }}"
+                                       id="role-{{ user.id }}-{{ role }}"
+                                       {% if role == user.role_name %}checked{% endif %}
+                                       aria-describedby="roleHelp-{{ user.id }}-{{ role }}"
                                        required>
-                                <label class="form-radio-label" for="role-{{ user.id }}-{{ role.name }}">
-                                    {{ role.name }}
+                                <label class="form-radio-label" for="role-{{ user.id }}-{{ role }}">
+                                    {{ role }}
                                 </label>
-                                <small id="roleHelp-{{ user.id }}-{{ role.name }}" class="form-text text-muted">
-                                    {{ role.description or 'Роль ' + role.name }}
-                                </small>
                             </div>
                             {% endfor %}
                         </fieldset>

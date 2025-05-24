@@ -3,8 +3,8 @@ from psycopg2 import Error
 
 # Параметры подключения к PostgreSQL
 DB_HOST = "localhost"
-DB_USER = "zooob"
-DB_PASSWORD = "1q2w3eRT"
+DB_USER = "daniel"
+DB_PASSWORD = "daniel"
 DB_NAME = "flask_auth"
 
 def reset_database():
